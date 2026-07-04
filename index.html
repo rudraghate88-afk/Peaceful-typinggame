@@ -205,22 +205,22 @@
             letter-spacing: 1px;
         }
 
-        /* Stealth Input for Mobile Keyboards */
+        /* New Anti-Predictive Typing Input Field Overlay */
         #mobile-keyboard-trigger {
             position: absolute;
-            opacity: 0;
-            pointer-events: none;
             top: 0;
             left: 0;
-            width: 1px;
-            height: 1px;
-            z-index: -10;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: default;
+            z-index: 5;
         }
     </style>
 </head>
 <body>
 
-    <!-- Hidden mobile utility channel box -->
+    <!-- Transparent touch overlay capturing input globally -->
     <input type="text" id="mobile-keyboard-trigger" autocomplete="off" autocapitalize="off" spellcheck="false" />
 
     <div class="background-container">
@@ -232,7 +232,7 @@
         <h1 class="header">The Divine Sanctuary</h1>
         
         <!-- Interactive Choices Menu -->
-        <div class="prompt-container">
+        <div class="prompt-container" style="position: relative; z-index: 10;">
             <button id="btn-dance" class="prompt-btn" onclick="loadPrompt('dance')">✨ Theme: The Cosmic Dance</button>
             <button id="btn-shield" class="prompt-btn" onclick="loadPrompt('shield')">🔱 Theme: The Divine Shield</button>
             <button id="btn-river" class="prompt-btn" onclick="loadPrompt('river')">🌊 Theme: The Endless River</button>
@@ -418,6 +418,10 @@
             updateCursor();
             playThemeMusic(type);
             playHeavenlyChime();
+            
+            // Clean out target buffers
+            const mobileInput = document.getElementById('mobile-keyboard-trigger');
+            if(mobileInput) mobileInput.value = "";
         }
 
         function updateCursor() {
@@ -477,7 +481,7 @@
             }
         }
 
-        // Central Typing Processor Core (Shared between PC & Mobile)
+        // Central Typing Processor Core
         function handleInputCharacter(inputKey) {
             if (charIndex >= currentText.length) return;
 
@@ -515,38 +519,40 @@
 
         // Desktop Listener
         window.addEventListener('keydown', (e) => {
-            initAudio(); // Activate sound tracking context
+            initAudio(); 
             if (e.key === ' ' || e.key === 'Spacebar') {
                 e.preventDefault(); 
             }
             handleInputCharacter(e.key);
         });
 
-        // Mobile Target Automation Fixes (Unclogged from Predictive Text)
+        // Bulletproof Mobile Core: Tracks pure difference variations
         const mobileInput = document.getElementById('mobile-keyboard-trigger');
+        let lastValue = "";
         
         document.addEventListener('click', () => {
             initAudio();
-            if (mobileInput) {
-                mobileInput.focus();
-            }
+            if (mobileInput) mobileInput.focus();
         });
 
         if (mobileInput) {
             mobileInput.addEventListener('input', (e) => {
-                if (e.inputType === 'deleteContentBackward') {
+                const currentValue = mobileInput.value;
+
+                // 1. Backspace check
+                if (currentValue.length < lastValue.length || e.inputType === 'deleteContentBackward') {
                     handleInputCharacter('Backspace');
-                    mobileInput.value = '';
-                    return;
+                } 
+                // 2. Addition check
+                else if (currentValue.length > 0) {
+                    // Pull the absolute final singular physical character added
+                    const typedChar = currentValue.slice(-1);
+                    handleInputCharacter(typedChar);
                 }
-                
-                const val = mobileInput.value;
-                if (val.length > 0) {
-                    const lastChar = val.charAt(val.length - 1);
-                    handleInputCharacter(lastChar);
-                }
-                
-                mobileInput.value = ''; // Clear to block predictive word grouping strings
+
+                // Completely clear the board layout states to kill auto-suggest dead
+                mobileInput.value = "";
+                lastValue = "";
             });
         }
 
