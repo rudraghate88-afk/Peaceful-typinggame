@@ -205,22 +205,22 @@
             letter-spacing: 1px;
         }
 
-        /* New Anti-Predictive Typing Input Field Overlay */
+        /* Stealth Input for Mobile Keyboards */
         #mobile-keyboard-trigger {
             position: absolute;
+            opacity: 0;
+            pointer-events: none;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: default;
-            z-index: 5;
+            width: 1px;
+            height: 1px;
+            z-index: -10;
         }
     </style>
 </head>
 <body>
 
-    <!-- Transparent touch overlay capturing input globally -->
+    <!-- This hidden field will capture typing strings on touchscreen gadgets -->
     <input type="text" id="mobile-keyboard-trigger" autocomplete="off" autocapitalize="off" spellcheck="false" />
 
     <div class="background-container">
@@ -232,7 +232,7 @@
         <h1 class="header">The Divine Sanctuary</h1>
         
         <!-- Interactive Choices Menu -->
-        <div class="prompt-container" style="position: relative; z-index: 10;">
+        <div class="prompt-container">
             <button id="btn-dance" class="prompt-btn" onclick="loadPrompt('dance')">✨ Theme: The Cosmic Dance</button>
             <button id="btn-shield" class="prompt-btn" onclick="loadPrompt('shield')">🔱 Theme: The Divine Shield</button>
             <button id="btn-river" class="prompt-btn" onclick="loadPrompt('river')">🌊 Theme: The Endless River</button>
@@ -418,10 +418,6 @@
             updateCursor();
             playThemeMusic(type);
             playHeavenlyChime();
-            
-            // Clean out target buffers
-            const mobileInput = document.getElementById('mobile-keyboard-trigger');
-            if(mobileInput) mobileInput.value = "";
         }
 
         function updateCursor() {
@@ -481,7 +477,7 @@
             }
         }
 
-        // Central Typing Processor Core
+        // Central Typing Processor Core (Shared between PC & Mobile)
         function handleInputCharacter(inputKey) {
             if (charIndex >= currentText.length) return;
 
@@ -519,40 +515,35 @@
 
         // Desktop Listener
         window.addEventListener('keydown', (e) => {
-            initAudio(); 
+            initAudio(); // Activate sound tracking context
             if (e.key === ' ' || e.key === 'Spacebar') {
                 e.preventDefault(); 
             }
             handleInputCharacter(e.key);
         });
 
-        // Bulletproof Mobile Core: Tracks pure difference variations
+        // Mobile Target Automation Fixes
         const mobileInput = document.getElementById('mobile-keyboard-trigger');
-        let lastValue = "";
         
         document.addEventListener('click', () => {
             initAudio();
-            if (mobileInput) mobileInput.focus();
+            if (mobileInput) {
+                mobileInput.focus();
+            }
         });
 
         if (mobileInput) {
             mobileInput.addEventListener('input', (e) => {
-                const currentValue = mobileInput.value;
-
-                // 1. Backspace check
-                if (currentValue.length < lastValue.length || e.inputType === 'deleteContentBackward') {
+                // Handle backspaces on mobile virtual keyboards
+                if (e.inputType === 'deleteContentBackward') {
                     handleInputCharacter('Backspace');
-                } 
-                // 2. Addition check
-                else if (currentValue.length > 0) {
-                    // Pull the absolute final singular physical character added
-                    const typedChar = currentValue.slice(-1);
-                    handleInputCharacter(typedChar);
+                } else {
+                    const char = e.data;
+                    if (char) {
+                        handleInputCharacter(char);
+                    }
                 }
-
-                // Completely clear the board layout states to kill auto-suggest dead
-                mobileInput.value = "";
-                lastValue = "";
+                mobileInput.value = ''; // Flush channel input values
             });
         }
 
