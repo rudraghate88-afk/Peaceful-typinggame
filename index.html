@@ -1,4 +1,483 @@
-// Central Typing Processor Core (Shared between PC & Mobile)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heavenly Writing Sanctuary</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: 'Georgia', serif;
+            overflow: hidden;
+            background-color: #0d0914;
+            user-select: none;
+        }
+
+        /* Heavenly Cosmic Background */
+        .background-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: 
+                radial-gradient(circle at 50% 30%, rgba(255, 223, 132, 0.25), transparent 60%),
+                radial-gradient(circle at 20% 70%, rgba(147, 197, 253, 0.2), transparent 50%),
+                linear-gradient(to bottom, #1a0c2e, #3c1e5a, #6b3e87);
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0.95;
+        }
+
+        /* AI-style Ethereal Deities Layer */
+        .divine-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1609137144813-2fa6439009aa?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            mix-blend-mode: screen;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        /* Soft drifting clouds */
+        .clouds {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/clouds.png');
+            opacity: 0.4;
+            animation: floatClouds 90s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes floatClouds {
+            from { background-position: 0 0; }
+            to { background-position: 1000px 0; }
+        }
+
+        /* Main Workspace Glass Container */
+        .workspace {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(to bottom, rgba(26, 12, 46, 0.3), rgba(13, 9, 20, 0.6));
+        }
+
+        .header {
+            color: #fffde6;
+            font-size: 2rem;
+            margin-bottom: 15px;
+            text-align: center;
+            text-shadow: 0 0 15px rgba(255, 235, 160, 0.6);
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        /* Choices Menu Style */
+        .prompt-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            max-width: 900px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .prompt-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 235, 163, 0.25);
+            color: #fffdec;
+            padding: 10px 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            font-size: 0.95rem;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .prompt-btn.active {
+            background: rgba(255, 235, 163, 0.25);
+            border-color: rgba(255, 235, 163, 0.8);
+            box-shadow: 0 0 15px rgba(255, 235, 163, 0.3);
+        }
+
+        .prompt-btn:hover {
+            background: rgba(255, 235, 163, 0.2);
+            border-color: rgba(255, 235, 163, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 235, 163, 0.15);
+        }
+
+        /* Monkeytype Style Word Wrapping Canvas */
+        .words-container {
+            width: 100%;
+            max-width: 900px;
+            height: 45vh;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 235, 163, 0.15);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            overflow-y: auto;
+            font-size: 1.5rem;
+            line-height: 2;
+            letter-spacing: 1px;
+            color: rgba(255, 253, 236, 0.3);
+            text-align: justify;
+        }
+
+        .words-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .words-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 235, 163, 0.2);
+            border-radius: 10px;
+        }
+
+        .char {
+            position: relative;
+            transition: color 0.15s ease;
+        }
+
+        .char.correct {
+            color: #fffde6;
+            text-shadow: 0 0 10px rgba(255, 235, 160, 0.8), 0 0 20px rgba(255, 210, 100, 0.4);
+        }
+
+        .char.incorrect {
+            color: #ff7676;
+            text-shadow: 0 0 10px rgba(255, 118, 118, 0.6);
+        }
+
+        .char.current {
+            color: #ffd264;
+            border-bottom: 2px solid #ffd264;
+            animation: pulseCursor 0.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseCursor {
+            0% { border-color: rgba(255, 210, 100, 0.2); }
+            100% { border-color: rgba(255, 210, 100, 1); }
+        }
+
+        .sparkle {
+            position: absolute;
+            pointer-events: none;
+            background: radial-gradient(circle, rgba(255,253,230,1) 0%, rgba(255,210,100,0.8) 40%, rgba(255,150,0,0) 100%);
+            border-radius: 50%;
+            mix-blend-mode: screen;
+            animation: fadeOutUp 0.8s ease-out forwards;
+        }
+
+        @keyframes fadeOutUp {
+            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+            100% { transform: translate(-50%, -150%) scale(1.4); opacity: 0; }
+        }
+        
+        .hint {
+            color: rgba(255, 253, 236, 0.5);
+            font-size: 0.9rem;
+            margin-top: 25px;
+            letter-spacing: 1px;
+        }
+
+        /* Stealth Input for Mobile Keyboards */
+        #mobile-keyboard-trigger {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 1px;
+            z-index: -10;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hidden mobile utility channel box -->
+    <input type="text" id="mobile-keyboard-trigger" autocomplete="off" autocapitalize="off" spellcheck="false" />
+
+    <div class="background-container">
+        <div class="divine-overlay"></div>
+        <div class="clouds"></div>
+    </div>
+
+    <div class="workspace">
+        <h1 class="header">The Divine Sanctuary</h1>
+        
+        <!-- Interactive Choices Menu -->
+        <div class="prompt-container">
+            <button id="btn-dance" class="prompt-btn" onclick="loadPrompt('dance')">✨ Theme: The Cosmic Dance</button>
+            <button id="btn-shield" class="prompt-btn" onclick="loadPrompt('shield')">🔱 Theme: The Divine Shield</button>
+            <button id="btn-river" class="prompt-btn" onclick="loadPrompt('river')">🌊 Theme: The Endless River</button>
+        </div>
+
+        <!-- Monkeytype Text Display Container -->
+        <div class="words-container" id="wordsDisplay"></div>
+        
+        <p class="hint">Tap or click anywhere on the screen, then begin typing. Enjoy the soundscape.</p>
+    </div>
+
+    <script>
+        const wordsDisplay = document.getElementById('wordsDisplay');
+        let currentText = "";
+        let charIndex = 0;
+        let currentTheme = '';
+        
+        const prompts = {
+            dance: "Under the watchful, gentle eyes of the cosmos, Lord Shiva begins a slow, beautiful dance. The stars shift silently, and with every step he takes, the noise of the earthly world fades into pure harmony. I am completely safe here, sitting under a canopy of stardust. As I watch this infinite cosmic balance, I realize that my mind is becoming entirely steady, powerful, and clean.",
+            shield: "I am wrapped completely in a golden, unbreakable aura of protection. The fierce and loving grace of the Divine Mother surrounds me like an invincible diamond shield. Negative energies, stress, and outside opinions dissolve instantly the moment they touch this warmth. I can breathe fully, knowing that I am fiercely guarded and mentally untouchable.",
+            river: "Time flows gently past me like a crystal-clear river winding through heavenly meadows. Beside me, Lord Vishnu rests peacefully on the cosmic waters, completely unaffected by the chaos of the universes. Watching this serene focus, I let go of all my past tensions. My mind becomes as calm as a mirror, deep, still, and completely unshakable."
+        };
+
+        // Web Audio Context Setup
+        let audioCtx;
+        let backgroundNodes = [];
+        let ambientMasterGain;
+        let melodyInterval;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                ambientMasterGain = audioCtx.createGain();
+                ambientMasterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+                ambientMasterGain.connect(audioCtx.destination);
+                ambientMasterGain.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + 1.5);
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function stopBackgroundMusic() {
+            if (melodyInterval) {
+                clearInterval(melodyInterval);
+                melodyInterval = null;
+            }
+            backgroundNodes.forEach(node => {
+                try { node.stop(); } catch(e) {}
+            });
+            backgroundNodes = [];
+        }
+
+        function playThemeMusic(theme) {
+            initAudio();
+            stopBackgroundMusic();
+
+            const now = audioCtx.currentTime;
+
+            if (theme === 'dance') {
+                const melodyScale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25];
+                
+                function playNextMelodyNote() {
+                    if (currentTheme !== 'dance' || !audioCtx) return;
+                    
+                    const noteTime = audioCtx.currentTime;
+                    const osc = audioCtx.createOscillator();
+                    const filter = audioCtx.createBiquadFilter();
+                    const gain = audioCtx.createGain();
+
+                    const randomNote = melodyScale[Math.floor(Math.random() * melodyScale.length)];
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(randomNote, noteTime);
+
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(500, noteTime);
+
+                    gain.gain.setValueAtTime(0, noteTime);
+                    gain.gain.linearRampToValueAtTime(0.04, noteTime + 0.5);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, noteTime + 3.5);
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ambientMasterGain);
+
+                    osc.start(noteTime);
+                    osc.stop(noteTime + 3.6);
+                    backgroundNodes.push(osc);
+
+                    setTimeout(() => {
+                        const index = backgroundNodes.indexOf(osc);
+                        if (index > -1) backgroundNodes.splice(index, 1);
+                    }, 4000);
+                }
+
+                playNextMelodyNote();
+                melodyInterval = setInterval(playNextMelodyNote, 2500);
+
+            } else if (theme === 'shield') {
+                const shieldScale = [349.23, 440.00, 523.25, 659.25];
+                let noteStep = 0;
+
+                function playShieldArpeggio() {
+                    if (currentTheme !== 'shield' || !audioCtx) return;
+
+                    const noteTime = audioCtx.currentTime;
+                    const osc = audioCtx.createOscillator();
+                    const filter = audioCtx.createBiquadFilter();
+                    const gain = audioCtx.createGain();
+
+                    const currentNote = shieldScale[noteStep % shieldScale.length];
+                    noteStep++;
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(currentNote, noteTime);
+
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(450, noteTime);
+
+                    gain.gain.setValueAtTime(0, noteTime);
+                    gain.gain.linearRampToValueAtTime(0.025, noteTime + 0.6);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, noteTime + 4.0);
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ambientMasterGain);
+
+                    osc.start(noteTime);
+                    osc.stop(noteTime + 4.1);
+                    backgroundNodes.push(osc);
+
+                    setTimeout(() => {
+                        const index = backgroundNodes.indexOf(osc);
+                        if (index > -1) backgroundNodes.splice(index, 1);
+                    }, 4500);
+                }
+
+                playShieldArpeggio();
+                melodyInterval = setInterval(playShieldArpeggio, 2200);
+
+            } else if (theme === 'river') {
+                const bufferSize = audioCtx.sampleRate * 2;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                noise.loop = true;
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(300, now);
+
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.12, now);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(ambientMasterGain);
+
+                noise.start();
+                backgroundNodes.push(noise);
+            }
+        }
+
+        function loadPrompt(type) {
+            currentTheme = type;
+            currentText = prompts[type];
+            charIndex = 0;
+            
+            document.querySelectorAll('.prompt-btn').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById(`btn-${type}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            wordsDisplay.innerHTML = currentText.split('').map((char, index) => {
+                return `<span class="char" id="char-${index}">${char}</span>`;
+            }).join('');
+            
+            updateCursor();
+            playThemeMusic(type);
+            playHeavenlyChime();
+        }
+
+        function updateCursor() {
+            const currentHighlight = document.querySelector('.char.current');
+            if (currentHighlight) currentHighlight.classList.remove('current');
+
+            const nextChar = document.getElementById(`char-${charIndex}`);
+            if (nextChar) {
+                nextChar.classList.add('current');
+                if (charIndex % 10 === 0) {
+                    nextChar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+
+        function playHeavenlyChime() {
+            if (!audioCtx) initAudio();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            const notes = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+            const randomNote = notes[Math.floor(Math.random() * notes.length)];
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(randomNote, now);
+            
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.05, now + 0.01); 
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.6);
+        }
+
+        function createSparkles() {
+            const container = document.body;
+            const activeSpan = document.getElementById(`char-${charIndex}`);
+            if (!activeSpan) return;
+
+            const rect = activeSpan.getBoundingClientRect();
+            
+            for(let i = 0; i < 2; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.classList.add('sparkle');
+                const size = Math.random() * 8 + 6;
+                sparkle.style.width = `${size}px`;
+                sparkle.style.height = `${size}px`;
+                sparkle.style.left = `${rect.left + (Math.random() * 10)}px`;
+                sparkle.style.top = `${rect.top + (Math.random() * 15)}px`;
+                container.appendChild(sparkle);
+                
+                setTimeout(() => { sparkle.remove(); }, 800);
+            }
+        }
+
+        // Central Typing Processor Core (Shared between PC & Mobile)
         function handleInputCharacter(inputKey) {
             if (charIndex >= currentText.length) return;
 
@@ -55,24 +534,25 @@
 
         if (mobileInput) {
             mobileInput.addEventListener('input', (e) => {
-                // If it's a backspace action
                 if (e.inputType === 'deleteContentBackward') {
                     handleInputCharacter('Backspace');
                     mobileInput.value = '';
                     return;
                 }
                 
-                // Read ONLY the very last character actually typed into the box, ignoring auto-correct blocks
                 const val = mobileInput.value;
                 if (val.length > 0) {
                     const lastChar = val.charAt(val.length - 1);
                     handleInputCharacter(lastChar);
                 }
                 
-                mobileInput.value = ''; // Instantly clear to keep auto-correct fresh
+                mobileInput.value = ''; // Clear to block predictive word grouping strings
             });
         }
 
         window.onload = () => {
             loadPrompt('dance');
         };
+    </script>
+</body>
+</html>
